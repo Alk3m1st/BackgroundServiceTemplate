@@ -1,6 +1,9 @@
-﻿using BackgroundServiceTemplate.Services;
+﻿using Autofac;
+using Autofac.Extras.Quartz;
+using BackgroundServiceTemplate.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,13 +13,22 @@ namespace BackgroundServiceTemplate
 {
     public class Program
     {
+        public static IContainer Container { get; set; }
+
         public static void Main()
         {
+            Trace.WriteLine("Register dependencies with Autofac...");
+            var builder = new ContainerBuilder();
+            builder.RegisterModule(new QuartzAutofacFactoryModule());
+            builder.RegisterModule(new QuartzAutofacJobsModule(typeof(ServiceScheduler).Assembly));
+            builder.RegisterType<ServiceScheduler>().AsSelf().SingleInstance();
+            Container = builder.Build();
+
             HostFactory.Run(x =>
             {
                 x.Service<ServiceScheduler>(s =>
                 {
-                    s.ConstructUsing(name => new ServiceScheduler());
+                    s.ConstructUsing(name => Container.Resolve<ServiceScheduler>());
                     s.WhenStarted(ss => ss.Start());
                     s.WhenStopped(ss => ss.Stop());
                 });
