@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Autofac.Extras.Quartz;
+using BackgroundServiceTemplate.Modules;
 using BackgroundServiceTemplate.Services;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace BackgroundServiceTemplate
             Trace.WriteLine("Register dependencies with Autofac...");
             var builder = new ContainerBuilder();
             builder.RegisterModule(new QuartzAutofacFactoryModule());
-            builder.RegisterModule(new QuartzAutofacJobsModule(typeof(ServiceScheduler).Assembly));
+            builder.RegisterModule(new AutofacJobsModule(typeof(ServiceScheduler).Assembly));   // Change with type T
             builder.RegisterType<ServiceScheduler>().AsSelf().SingleInstance();
             Container = builder.Build();
 
