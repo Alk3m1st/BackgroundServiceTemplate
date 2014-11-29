@@ -1,5 +1,7 @@
 ﻿using Autofac;
 using Autofac.Extras.Quartz;
+using BackgroundServiceTemplate.Interfaces;
+using BackgroundServiceTemplate.Jobs;
 using Quartz;
 using Quartz.Impl;
 using System;
@@ -15,10 +17,12 @@ namespace BackgroundServiceTemplate.Services
     {
         public IScheduler Scheduler { get; set; }
         public ISchedulerFactory SchedulerFactory { get; set; }
+        public IEnumerable<BackgroundServiceJob> Jobs { get; set; }
 
-        public ServiceScheduler(ISchedulerFactory schedulerFactory)
+        public ServiceScheduler(ISchedulerFactory schedulerFactory, IEnumerable<BackgroundServiceJob> jobs)
         {
             SchedulerFactory = schedulerFactory;
+            Jobs = jobs;
         }
 
         public void Start()
@@ -31,9 +35,22 @@ namespace BackgroundServiceTemplate.Services
                 Trace.WriteLine("Firing triggers...");
                 Scheduler.Start();
 
-                Trace.WriteLine("Do stuff");
+                Trace.WriteLine("Schedule Jobs");
+                foreach(var job in Jobs)
+                {
+                    var jobDetail = JobBuilder.Create(job.GetType())
+                        .WithIdentity(job.GetType().Name, "group1")
+                        .Build();
 
-                Scheduler.Shutdown();
+                    var tb = TriggerBuilder.Create()
+                        .WithIdentity(job.GetType().Name, "group1")
+                        .StartNow();
+                    var trigger = job.GetSchedule(tb).Build();
+
+                    Scheduler.ScheduleJob(jobDetail, trigger);
+                }
+
+                Trace.WriteLine("Do stuff");
             }
             catch(TaskSchedulerException se)
             {
@@ -44,7 +61,8 @@ namespace BackgroundServiceTemplate.Services
 
         public void Stop()
         {
-            Trace.WriteLine("Service scheduler starting...");
+            Trace.WriteLine("Service scheduler stoping...");
+            Scheduler.Shutdown();
         }
     }
 }
