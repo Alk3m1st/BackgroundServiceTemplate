@@ -13,7 +13,13 @@ using System.Threading.Tasks;
 
 namespace BackgroundServiceTemplate.Services
 {
-    public class ServiceScheduler
+    public interface IServiceScheduler
+    {
+        void Start();
+        void Stop();
+    }
+
+    public class ServiceScheduler : IServiceScheduler
     {
         public IScheduler Scheduler { get; set; }
         public ISchedulerFactory SchedulerFactory { get; set; }
